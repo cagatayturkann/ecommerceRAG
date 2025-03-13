@@ -5,8 +5,8 @@
 // dotenv konfigürasyonu
 // Client-side JavaScript'te require() kullanılamaz
 // Environment variables'ları backend'den almalı veya doğrudan tanımlamalıyız
-const SITE_URL = window.SITE_URL || 'http://localhost';
-const PORT = window.PORT || '3000';
+// const SITE_URL = window.SITE_URL || 'http://localhost';
+// const PORT = window.PORT || '3000';
 
 (function () {
   // Widget CSS'ini dinamik olarak yükle
@@ -19,7 +19,7 @@ const PORT = window.PORT || '3000';
     // Widget CSS dosyasını yükle
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = `${SITE_URL}:${PORT}/css/widget.css`;
+    link.href = `/css/widget.css`;
     document.head.appendChild(link);
   }
 
@@ -34,7 +34,7 @@ const PORT = window.PORT || '3000';
             <div class="chat-container collapsed">
                 <div class="chat-header">
                     <div style="display: flex; align-items: center;">
-                        <img src="${SITE_URL}:${PORT}/img/my-profile-img.jpg" alt="Assistant" class="header-avatar">
+                        <img src="/img/my-profile-img.jpg" alt="Assistant" class="header-avatar">
                         <h3>ChaCha[Çaça]</h3>
                     </div>
                     <div class="header-actions">
@@ -282,7 +282,7 @@ const PORT = window.PORT || '3000';
 
       if (sender === 'bot') {
         const avatarImg = document.createElement('img');
-        avatarImg.src = `${SITE_URL}:${PORT}/img/my-profile-img.jpg`;
+        avatarImg.src = `/img/my-profile-img.jpg`;
         avatarImg.alt = 'Bot Avatar';
         avatarDiv.appendChild(avatarImg);
       } else {
@@ -353,7 +353,7 @@ const PORT = window.PORT || '3000';
       const avatarDiv = document.createElement('div');
       avatarDiv.className = 'message-avatar';
       const avatarImg = document.createElement('img');
-      avatarImg.src = `${SITE_URL}:${PORT}/img/my-profile-img.jpg`;
+      avatarImg.src = `/img/my-profile-img.jpg`;
       avatarImg.alt = 'Bot Avatar';
       avatarDiv.appendChild(avatarImg);
       messageDiv.appendChild(avatarDiv);
