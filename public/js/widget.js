@@ -388,7 +388,7 @@
     // Pencere boyutu değişikliği ve yön değişikliği işleme
     window.addEventListener('resize', () => {
       const isMobileNow = window.matchMedia('(max-width: 480px)').matches;
-
+      
       // Mobil cihazda chat açıkken scroll'u engelle
       if (isMobileNow && !chatContainer.classList.contains('collapsed')) {
         document.body.style.overflow = 'hidden';
@@ -396,7 +396,7 @@
         document.body.style.overflow = '';
       }
     });
-
+    
     // Enter tuşu ile mesaj gönderme
     messageInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {

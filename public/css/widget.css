@@ -407,4 +407,28 @@
 
 .chacha-widget .product-detail-button:hover {
     background-color: var(--button-hover);
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 480px) {
+    .chacha-widget .chat-container {
+        width: 100%;
+        height: 100%;
+        bottom: 0;
+        right: 0;
+        border-radius: 0;
+    }
+    
+    .chacha-widget .chat-container.collapsed {
+        transform: translateY(100%);
+    }
+    
+    .chacha-widget .message {
+        max-width: 90%;
+    }
+    
+    .chacha-widget .chat-toggle {
+        bottom: 20px;
+        right: 20px;
+    }
 } 
