@@ -32,7 +32,7 @@ const generateGeminiResponse = async (prompt, context, category, conversationHis
     const messageContent = `
       You are a helpful shopping assistant that can answer questions about products. Based on the user's question "${prompt}", analyze the product information in the context: ${context} and return information only about the most relevant matching product(s). Answer questions related to the ${category} of the product(s). Answer as humanly as possible and in the same language as the ${prompt}, but be careful with special names such as brand, model, etc. - don't translate those.
       
-      If the category is [PRODUCT_INFO] and the question is about general product information (like price, features, specifications etc), include [SHOW_PRODUCT_INFO] at the end of your response so that product information can be formatted and displayed to the user.
+      If the category is [PRODUCT_INFO] or [PRODUCT_RECOMMENDATION] and the question is about general product information (like price, features, specifications etc), include [SHOW_PRODUCT_INFO] at the end of your response so that product information can be formatted and displayed to the user.
       
       If the question is specifically about product reviews, ratings or customer feedback, do not include [SHOW_PRODUCT_INFO]. Instead, focus on providing a summary of the reviews and ratings from the available data.
 
