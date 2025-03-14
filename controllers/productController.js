@@ -15,7 +15,7 @@ const getProductDetail = async (req, res) => {
     }
     
     // Read products.json file
-    const productsPath = path.join(__dirname, '../research/products.json');
+    const productsPath = path.join(__dirname, '../public/files/products.json');
     const productsData = fs.readFileSync(productsPath, 'utf8');
     const products = JSON.parse(productsData);
     

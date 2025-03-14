@@ -46,7 +46,7 @@ const generateGeminiResponse = async (prompt, context, category, conversationHis
       User: "What is the warranty period?"
       Assistant: "The warranty period for the MacBook Pro is..." (should continue talking about the MacBook, not switch to a different product)
 
-      At the end of your response, include a JSON object with an array of product IDs that you referenced in your answer, in the format: [PRODUCT_IDS]{"ids":["id1","id2"]}[/PRODUCT_IDS]
+      At the end of your response, after [SHOW_PRODUCT_INFO],include a JSON object with an array of product IDs that you referenced in your answer, in the format: [PRODUCT_IDS]{"ids":["id1","id2"]}[/PRODUCT_IDS]
 
       Here is the conversation history so far:
       ${formattedHistory}
@@ -66,25 +66,6 @@ const generateGeminiResponse = async (prompt, context, category, conversationHis
       return res.response.text();
     } catch (geminiError) {
       console.error('Gemini API error:', geminiError);
-
-      // Fall back to OpenRouter API if Gemini fails
-      console.log('Gemini API failed, trying OpenRouter API...');
-
-      const openRouterResponse = await axios.post(
-        'https://openrouter.ai/api/v1/chat/completions',
-        {
-          model: 'anthropic/claude-3-opus:beta',
-          messages: [{ role: 'user', content: messageContent }],
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      return openRouterResponse.data.choices[0].message.content;
     }
   } catch (error) {
     console.error('Error generating AI response:', error);
@@ -93,5 +74,5 @@ const generateGeminiResponse = async (prompt, context, category, conversationHis
 };
 
 module.exports = {
-  generateGeminiResponse
-}; 
+  generateGeminiResponse,
+};

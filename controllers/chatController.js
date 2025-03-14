@@ -98,6 +98,7 @@ const processChat = async (req, res) => {
 
       // Check if product information should be displayed
       if (response.includes('[SHOW_PRODUCT_INFO]')) {
+        console.log('response includes [SHOW_PRODUCT_INFO]');
         // Remove [SHOW_PRODUCT_INFO] tag from AI response
         response = response.replace('[SHOW_PRODUCT_INFO]', '');
 

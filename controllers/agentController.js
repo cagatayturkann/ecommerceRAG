@@ -62,10 +62,9 @@ const categorizerAgent = async (message) => {
           {
             role: 'system',
             content: `You are a sophisticated AI agent specializing in categorizing user queries into one of the following categories:
-            [PRODUCT_INFO] - Questions about product information, features, specifications, price, etc.
-            [PRODUCT_COMPARISON] - Questions comparing multiple products
+            [PRODUCT_INFO] - Questions about product information, features, specifications, price, existence, availability, etc.
+            [PRODUCT_COMPARISON] - Questions comparing multiple products,
             [PRODUCT_RECOMMENDATION] - Questions asking for product recommendations
-            [PRODUCT_AVAILABILITY] - Questions about product availability
             [PRODUCT_REVIEWS] - Questions about product reviews or ratings
             [GENERAL_INQUIRY] - General questions not related to specific products
             [CUSTOMER_SERVICE] - Questions about customer service, shipping, returns, etc.
