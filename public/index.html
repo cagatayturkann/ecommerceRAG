@@ -7,7 +7,171 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="css/widget.css" />
   </head>
-  <body>
+  <body >
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400">
+      <!-- Arka plan renk geçişleri ve efektler -->
+      <defs>
+        <!-- Ana arka plan gradyanı -->
+        <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#6A11CB" />
+          <stop offset="100%" stop-color="#2575FC" />
+        </linearGradient>
+        
+        <!-- İkincil gradyanlar -->
+        <linearGradient id="accentGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#FF416C" />
+          <stop offset="100%" stop-color="#FF4B2B" />
+        </linearGradient>
+        
+        <linearGradient id="accentGradient2" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#00C6FF" />
+          <stop offset="100%" stop-color="#0072FF" />
+        </linearGradient>
+        
+        <linearGradient id="accentGradient3" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#FDC830" />
+          <stop offset="100%" stop-color="#F37335" />
+        </linearGradient>
+        
+        <!-- Filtreler ve efektler -->
+        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="5" result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+        
+        <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.3" />
+        </filter>
+        
+        <!-- İkon sembolleri -->
+        <symbol id="shoppingCart" viewBox="0 0 24 24">
+          <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z" fill="#FFFFFF" />
+        </symbol>
+        
+        <symbol id="chatBubble" viewBox="0 0 24 24">
+          <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="#FFFFFF" />
+        </symbol>
+        
+        <symbol id="smartphone" viewBox="0 0 24 24">
+          <path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z" fill="#FFFFFF" />
+          <rect x="9" y="9" width="6" height="2" fill="#FFFFFF" />
+          <rect x="9" y="12" width="6" height="2" fill="#FFFFFF" />
+          <rect x="9" y="15" width="6" height="2" fill="#FFFFFF" />
+        </symbol>
+        
+        <symbol id="database" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 4.91 2 8.5v7C2 19.09 6.48 22 12 22s10-2.91 10-6.5v-7C22 4.91 17.52 2 12 2zm0 13c-3.86 0-7-1.37-7-3s3.14-3 7-3 7 1.37 7 3-3.14 3-7 3z" fill="#FFFFFF" />
+          <ellipse cx="12" cy="5.5" rx="7" ry="3" fill="#FFFFFF" />
+          <ellipse cx="12" cy="12" rx="7" ry="3" fill="#FFFFFF" opacity="0.5" />
+          <ellipse cx="12" cy="18.5" rx="7" ry="3" fill="#FFFFFF" opacity="0.3" />
+        </symbol>
+        
+        <symbol id="ai" viewBox="0 0 24 24">
+          <path d="M21 11.18V9.72c0-.47-.16-.92-.46-1.28L16.6 3.72c-.38-.46-.94-.72-1.54-.72H8.94c-.6 0-1.15.26-1.54.72L3.46 8.44c-.3.36-.46.81-.46 1.28v1.45c0 .8.48 1.52 1.23 1.83v6.5c0 .83.67 1.5 1.5 1.5h12.54c.83 0 1.5-.67 1.5-1.5v-6.5c.75-.31 1.23-1.03 1.23-1.83zM12 18.5c-.83 0-1.5-.67-1.5-1.5h3c0 .83-.67 1.5-1.5 1.5zm5.5-2.5h-11v-7h11v7zm1-9H13V4h2.6l2.9 3H5.5l2.9-3H11v3h6.5v.5c0 .28-.22.5-.5.5s-.5-.22-.5-.5z" fill="#FFFFFF" />
+        </symbol>
+        
+        <!-- Parçacık dokusu için pattern -->
+        <pattern id="dotsPattern" width="20" height="20" patternUnits="userSpaceOnUse">
+          <circle cx="2" cy="2" r="0.8" fill="#FFFFFF" opacity="0.3" />
+        </pattern>
+      </defs>
+      
+      <!-- Ana arka plan -->
+      <rect width="100%" height="100%" fill="url(#bgGradient)" />
+      <rect width="100%" height="100%" fill="url(#dotsPattern)" />
+      
+      <!-- Dinamik dalga şekilleri -->
+      <path d="M0,80 C120,120 280,0 400,60 C520,120 680,80 800,100 L800,400 L0,400 Z" fill="#FFFFFF" opacity="0.05" />
+      <path d="M0,60 C120,100 280,15 400,50 C520,85 680,40 800,75 L800,400 L0,400 Z" fill="#FFFFFF" opacity="0.03" />
+      
+      <!-- Büyük dekoratif daireler -->
+      <circle cx="40" cy="40" r="120" fill="url(#accentGradient1)" opacity="0.2" />
+      <circle cx="760" cy="360" r="140" fill="url(#accentGradient2)" opacity="0.2" />
+      <circle cx="680" cy="80" r="100" fill="url(#accentGradient3)" opacity="0.1" />
+      
+      <!-- 3D Çizgi Bağlantıları -->
+      <g filter="url(#glow)" opacity="0.4">
+        <!-- Sol kenar ağı -->
+        <path d="M40,100 L140,40 L200,130 L100,180 Z" stroke="#FFFFFF" stroke-width="0.7" fill="none" />
+        <path d="M40,100 L40,220 L100,180 Z" stroke="#FFFFFF" stroke-width="0.7" fill="none" />
+        <path d="M40,220 L140,280 L200,130 Z" stroke="#FFFFFF" stroke-width="0.7" fill="none" />
+        <path d="M140,280 L240,240 L200,130 Z" stroke="#FFFFFF" stroke-width="0.7" fill="none" />
+        
+        <!-- Sağ kenar ağı -->
+        <path d="M560,100 L660,40 L720,130 L620,180 Z" stroke="#FFFFFF" stroke-width="0.7" fill="none" />
+        <path d="M560,100 L560,220 L620,180 Z" stroke="#FFFFFF" stroke-width="0.7" fill="none" />
+        <path d="M560,220 L660,280 L720,130 Z" stroke="#FFFFFF" stroke-width="0.7" fill="none" />
+        <path d="M660,280 L760,240 L720,130 Z" stroke="#FFFFFF" stroke-width="0.7" fill="none" />
+      </g>
+      
+      <!-- Parlak E-ticaret İkonları -->
+      <!-- Sol taraf -->
+      <g filter="url(#shadow)">
+        <circle cx="40" cy="100" r="14" fill="url(#accentGradient1)" />
+        <use href="#chatBubble" x="32" y="92" width="16" height="16" />
+        
+        <circle cx="140" cy="40" r="14" fill="url(#accentGradient2)" />
+        <use href="#shoppingCart" x="132" y="32" width="16" height="16" />
+        
+        <circle cx="200" cy="130" r="14" fill="url(#accentGradient3)" />
+        <use href="#smartphone" x="192" y="122" width="16" height="16" />
+        
+        <circle cx="100" cy="180" r="14" fill="url(#accentGradient1)" />
+        <use href="#database" x="92" y="172" width="16" height="16" />
+        
+        <circle cx="40" cy="220" r="14" fill="url(#accentGradient2)" />
+        <use href="#ai" x="32" y="212" width="16" height="16" />
+      </g>
+      
+      <!-- Sağ taraf -->
+      <g filter="url(#shadow)">
+        <circle cx="560" cy="100" r="14" fill="url(#accentGradient1)" />
+        <use href="#chatBubble" x="552" y="92" width="16" height="16" />
+        
+        <circle cx="660" cy="40" r="14" fill="url(#accentGradient2)" />
+        <use href="#shoppingCart" x="652" y="32" width="16" height="16" />
+        
+        <circle cx="720" cy="130" r="14" fill="url(#accentGradient3)" />
+        <use href="#smartphone" x="712" y="122" width="16" height="16" />
+        
+        <circle cx="620" cy="180" r="14" fill="url(#accentGradient1)" />
+        <use href="#database" x="612" y="172" width="16" height="16" />
+        
+        <circle cx="560" cy="220" r="14" fill="url(#accentGradient2)" />
+        <use href="#ai" x="552" y="212" width="16" height="16" />
+      </g>
+      
+      <!-- Merkez vurgu - animasyon ve ışıma efekti için -->
+      <g filter="url(#glow)">
+        <circle cx="400" cy="200" r="40" fill="url(#accentGradient2)" opacity="0.1" />
+        <circle cx="400" cy="200" r="30" fill="url(#accentGradient2)" opacity="0.15" />
+        <circle cx="400" cy="200" r="20" fill="url(#accentGradient2)" opacity="0.2" />
+        
+        <!-- Merkez çevresinde ışıma çizgileri -->
+        <line x1="350" y1="200" x2="320" y2="200" stroke="#FFFFFF" stroke-width="1.5" opacity="0.4" />
+        <line x1="450" y1="200" x2="480" y2="200" stroke="#FFFFFF" stroke-width="1.5" opacity="0.4" />
+        <line x1="400" y1="150" x2="400" y2="120" stroke="#FFFFFF" stroke-width="1.5" opacity="0.4" />
+        <line x1="400" y1="250" x2="400" y2="280" stroke="#FFFFFF" stroke-width="1.5" opacity="0.4" />
+      </g>
+      
+      <!-- Parçacık efekti (küçük noktalar) -->
+      <circle cx="340" cy="170" r="2" fill="#FFFFFF" opacity="0.7" />
+      <circle cx="440" cy="150" r="1.5" fill="#FFFFFF" opacity="0.5" />
+      <circle cx="370" cy="230" r="2.5" fill="#FFFFFF" opacity="0.6" />
+      <circle cx="460" cy="220" r="2" fill="#FFFFFF" opacity="0.7" />
+      <circle cx="420" cy="180" r="1.5" fill="#FFFFFF" opacity="0.5" />
+      <circle cx="330" cy="210" r="2.5" fill="#FFFFFF" opacity="0.6" />
+      
+      <!-- İnce vurgu çizgileri -->
+      <path d="M280,100 C320,70 360,130 400,100 C440,70 480,130 520,100" stroke="#FFFFFF" stroke-width="0.8" fill="none" opacity="0.3" />
+      <path d="M280,300 C320,330 360,270 400,300 C440,330 480,270 520,300" stroke="#FFFFFF" stroke-width="0.8" fill="none" opacity="0.3" />
+      
+      <!-- Başlık -->
+      <g filter="url(#shadow)">
+        <text x="400" y="70" font-family="Arial, sans-serif" font-size="28" font-weight="bold" text-anchor="middle" fill="#FFFFFF">E-Commerce RAG Project</text>
+        <text x="400" y="95" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#FFFFFF" opacity="0.8">AI-Powered Shopping Assistant</text>
+      </g>
+    </svg>
     <script src="js/widget.js"></script>
   </body>
 </html>
