@@ -58,7 +58,7 @@ const generateGeminiResponse = async (prompt, context, category, conversationHis
     try {
       // Use Gemini API
       const model = genAI.getGenerativeModel({
-        model: 'gemini-2.0-flash',
+        model: 'gemini-2.5-flash-lite',
         systemInstruction: messageContent,
       });
 
@@ -66,6 +66,7 @@ const generateGeminiResponse = async (prompt, context, category, conversationHis
       return res.response.text();
     } catch (geminiError) {
       console.error('Gemini API error:', geminiError);
+      return 'Üzgünüm, şu anda yanıt oluşturamıyorum. Lütfen biraz sonra tekrar deneyin.';
     }
   } catch (error) {
     console.error('Error generating AI response:', error);

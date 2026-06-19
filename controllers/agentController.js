@@ -1,135 +1,71 @@
-const axios = require('axios');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 require('dotenv').config();
 
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
+const MODEL_NAME = 'gemini-2.5-flash-lite';
+
+async function generateText(systemInstruction, prompt, fallback) {
+  if (!genAI) {
+    console.error('GEMINI_API_KEY is missing.');
+    return fallback;
+  }
+
+  try {
+    const model = genAI.getGenerativeModel({
+      model: MODEL_NAME,
+      systemInstruction,
+    });
+    const response = await model.generateContent(prompt);
+    return response.response.text().trim();
+  } catch (error) {
+    console.error('Gemini agent error:', error.message);
+    return fallback;
+  }
+}
+
 /**
- * Translates user messages to English
+ * Translates user messages to English.
  * @param {String} message - User message to translate
- * @returns {String} - Translated message in English
+ * @returns {Promise<String>} Translated message in English
  */
-const translatorAgent = async (message) => {
-  try {
-    const response = await axios({
-      method: 'post',
-      url: 'https://openrouter.ai/api/v1/chat/completions',
-      headers: {
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': process.env.SITE_URL || 'http://localhost:3000',
-        'X-Title': 'AI Chatbot',
-      },
-      data: {
-        model: 'google/gemini-2.0-flash-001',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a sophisticated AI agent specializing in translating user queries from multiple languages into English. Before translating, you identify and correct typos, grammatical errors, and punctuation mistakes in the source text to ensure clarity and readability. Your translations should maintain the original context and be culturally nuanced. You also verify that the translated English text is free of errors, providing precise and reliable communication for the chatbot. Return only the translated text as plain text, without any line breaks, including the "\n" character, HTML elements, special characters, or trailing newline characters. Ensure the output is a continuous string of text.`,
-          },
-          {
-            role: 'user',
-            content: message,
-          },
-        ],
-      },
-    });
-
-    return response.data.choices[0].message.content.replace(/\n+$/, '');
-  } catch (error) {
-    console.error('OpenRouter API error:', error);
-    return 'Sorry, an error occurred while generating a response: ' + error.message;
-  }
-};
+const translatorAgent = (message) =>
+  generateText(
+    'Translate the user message into clear English. Correct obvious typos and grammar while preserving meaning. Return only the translation as plain text.',
+    message,
+    message
+  );
 
 /**
- * Categorizes user messages into predefined categories
+ * Categorizes user messages into predefined categories.
  * @param {String} message - User message to categorize
- * @returns {String} - Category of the message
+ * @returns {Promise<String>} Category of the message
  */
-const categorizerAgent = async (message) => {
-  try {
-    const response = await axios({
-      method: 'post',
-      url: 'https://openrouter.ai/api/v1/chat/completions',
-      headers: {
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': process.env.SITE_URL || 'http://localhost:3000',
-        'X-Title': 'AI Chatbot',
-      },
-      data: {
-        model: 'google/gemini-2.0-flash-001',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a sophisticated AI agent specializing in categorizing user queries into one of the following categories:
-            [PRODUCT_INFO] - Questions about product information, features, specifications, price, existence, availability, etc.
-            [PRODUCT_COMPARISON] - Questions comparing multiple products,
-            [PRODUCT_RECOMMENDATION] - Questions asking for product recommendations
-            [PRODUCT_REVIEWS] - Questions about product reviews or ratings
-            [GENERAL_INQUIRY] - General questions not related to specific products
-            [CUSTOMER_SERVICE] - Questions about customer service, shipping, returns, etc.
-            [OTHER] - Any other type of question
-            
-            Return only the category as plain text, without any line breaks, including the "\n" character, HTML elements, special characters, or trailing newline characters. Ensure the output is a continuous string of text.`,
-          },
-          {
-            role: 'user',
-            content: message,
-          },
-        ],
-      },
-    });
-
-    return response.data.choices[0].message.content.replace(/\n+$/, '');
-  } catch (error) {
-    console.error('OpenRouter API error:', error);
-    return '[GENERAL_INQUIRY]';
-  }
-};
+const categorizerAgent = (message) =>
+  generateText(
+    `Classify the user message into exactly one of these labels:
+[PRODUCT_INFO], [PRODUCT_COMPARISON], [PRODUCT_RECOMMENDATION], [PRODUCT_REVIEWS], [GENERAL_INQUIRY], [CUSTOMER_SERVICE], [OTHER].
+Return only the label.`,
+    message,
+    '[GENERAL_INQUIRY]'
+  );
 
 /**
- * Determines if a message is a follow-up question based on conversation history
- * @param {Array} conversationHistory - Array of previous conversation messages
- * @returns {String} - JSON string indicating if message is a follow-up (true/false)
+ * Determines if the latest message is a follow-up to earlier conversation.
+ * @param {Array} conversationHistory - Previous conversation messages
+ * @returns {Promise<String>} JSON boolean text: true or false
  */
-const classifierAgent = async (conversationHistory) => {
-  try {
-    // Format conversation history for the AI model
-    const formattedHistory = conversationHistory
-      .map((msg) => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
-      .join('\n');
+const classifierAgent = (conversationHistory) => {
+  const formattedHistory = conversationHistory
+    .map((msg) => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+    .join('\n');
 
-    const response = await axios({
-      method: 'post',
-      url: 'https://openrouter.ai/api/v1/chat/completions',
-      headers: {
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': process.env.SITE_URL || 'http://localhost:3000',
-        'X-Title': 'AI Chatbot',
-      },
-      data: {
-        model: 'google/gemini-2.0-flash-001',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a sophisticated AI agent specializing in determining if a user's message is a follow-up question to a previous conversation. A follow-up question is a question that refers to or builds upon a previous question or response in the conversation. For example, if a user asks about a product and then asks about its price, the second question is a follow-up question.
-
-            Analyze the conversation history and determine if the last user message is a follow-up question. Return only a JSON boolean value (true or false) as plain text, without any line breaks, including the "\n" character, HTML elements, special characters, or trailing newline characters. Ensure the output is a continuous string of text.`,
-          },
-          {
-            role: 'user',
-            content: `Here is the conversation history:\n${formattedHistory}\n\nIs the last user message a follow-up question?`,
-          },
-        ],
-      },
-    });
-
-    return response.data.choices[0].message.content.replace(/\n+$/, '');
-  } catch (error) {
-    console.error('OpenRouter API error:', error);
-    return 'false';
-  }
+  return generateText(
+    'Determine whether the final user message follows up on the prior conversation. Return only the JSON boolean true or false.',
+    formattedHistory,
+    'false'
+  );
 };
 
 module.exports = {

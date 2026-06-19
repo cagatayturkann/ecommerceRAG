@@ -58,8 +58,7 @@ const processChat = async (req, res) => {
     if (conversationHistory.length >= 3) {
       // Use classifierAgent to determine if it's a follow-up
       const response = await classifierAgent(conversationHistory);
-      const parsedResponse = JSON.parse(response);
-      isFollowUp = parsedResponse;
+      isFollowUp = response.trim().toLowerCase() === 'true';
       console.log(`Is follow-up question? ${isFollowUp ? 'Yes' : 'No'}`);
     }
 
@@ -108,13 +107,19 @@ const processChat = async (req, res) => {
         let productsToShow;
         if (productIdsMatch) {
           // Get product IDs specified by AI
-          const productIds = JSON.parse(productIdsMatch[1]).ids;
+          let productIds;
+          try {
+            productIds = JSON.parse(productIdsMatch[1]).ids;
+          } catch (error) {
+            console.warn('Invalid product ID payload from AI response. Showing all retrieved products.');
+          }
 
-          // Filter products to only show those with specified IDs
-          productsToShow = products.filter((product) => {
-            const parsedProduct = typeof product === 'string' ? JSON.parse(product) : product;
-            return productIds.includes(parsedProduct.id.toString());
-          });
+          productsToShow = Array.isArray(productIds)
+            ? products.filter((product) => {
+                const parsedProduct = typeof product === 'string' ? JSON.parse(product) : product;
+                return productIds.includes(parsedProduct.id.toString());
+              })
+            : products;
 
           // Remove ID tags from response
           response = response.replace(/\[PRODUCT_IDS\].*?\[\/PRODUCT_IDS\]/, '');
