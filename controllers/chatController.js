@@ -6,6 +6,41 @@ const { translatorAgent, categorizerAgent, classifierAgent } = require('./agentC
 
 require('dotenv').config();
 
+const createProductContext = (products) =>
+  products.map((product) => {
+    const parsedProduct = typeof product === 'string' ? JSON.parse(product) : product;
+    return {
+      id: String(parsedProduct.id),
+      title: parsedProduct.title,
+      brand: parsedProduct.brand,
+      category: parsedProduct.category,
+      description: parsedProduct.description,
+      price: parsedProduct.price,
+      rating: parsedProduct.rating,
+      stock: parsedProduct.stock,
+      availabilityStatus: parsedProduct.availabilityStatus,
+      warrantyInformation: parsedProduct.warrantyInformation,
+      shippingInformation: parsedProduct.shippingInformation,
+    };
+  });
+
+const expandProductSearchQuery = (query) => {
+  const normalizedQuery = query.toLowerCase();
+
+  if (/\b(computer|pc|bilgisayar)\b/.test(normalizedQuery)) {
+    return `${query} laptop notebook pc`;
+  }
+
+  return query;
+};
+
+const normalizeProductCategory = (category, message) => {
+  const productIntent = /\b(var mı|var mi|do you have|available|availability|fiyat|price|özellik|feature|öner|recommend)\b/i;
+  return category === '[GENERAL_INQUIRY]' && productIntent.test(message)
+    ? '[PRODUCT_INFO]'
+    : category;
+};
+
 /**
  * Processes chat messages and generates AI responses
  * @param {Object} req - Express request object
@@ -23,7 +58,8 @@ const processChat = async (req, res) => {
     console.log(`Conversation ID: ${conversationId || 'New conversation'}`);
 
     // Categorize the message
-    const category = await categorizerAgent(message);
+    const rawCategory = await categorizerAgent(message);
+    const category = normalizeProductCategory(rawCategory, message);
     console.log(`Message category: "${category}"`);
 
     // Get existing conversation or create new one
@@ -63,7 +99,7 @@ const processChat = async (req, res) => {
     }
 
     // Prepare search query
-    let searchQuery = translatedMessage;
+    let searchQuery = expandProductSearchQuery(translatedMessage);
 
     // If it's a follow-up question, include previous user questions
     if (isFollowUp && conversationHistory.length >= 3) {
@@ -84,25 +120,27 @@ const processChat = async (req, res) => {
     // Process response based on product information
     let response;
     if (products && products.length > 0) {
-      // Send product information to AI in JSON format
-      const productContext = JSON.stringify(products);
+      // Give the model a concise, relevant product context instead of full product records.
+      const productContext = JSON.stringify(createProductContext(products));
 
       // Send category and conversation history to AI
-      response = await aiService.generateGeminiResponse(message, productContext, category, conversationHistory);
+      response = await aiService.generateResponse(message, productContext, category, conversationHistory);
       console.log('response', response);
-      
-      // Clean [SHOW_PRODUCT_INFO] tag
-      const cleanedResponse = response.replace('[SHOW_PRODUCT_INFO]', '');
-      await conversationService.addMessageToConversation(conversation._id, 'assistant', cleanedResponse);
 
-      // Check if product information should be displayed
-      if (response.includes('[SHOW_PRODUCT_INFO]')) {
-        console.log('response includes [SHOW_PRODUCT_INFO]');
-        // Remove [SHOW_PRODUCT_INFO] tag from AI response
-        response = response.replace('[SHOW_PRODUCT_INFO]', '');
+      const productIdsMatch = response.match(/\[PRODUCT_IDS\](.*?)\[\/PRODUCT_IDS\]/);
+      const isProductDisplayCategory =
+        category === '[PRODUCT_INFO]' || category === '[PRODUCT_RECOMMENDATION]';
+      const shouldShowProducts = response.includes('[SHOW_PRODUCT_INFO]') || isProductDisplayCategory;
 
-        // Extract product IDs from AI response
-        const productIdsMatch = response.match(/\[PRODUCT_IDS\](.*?)\[\/PRODUCT_IDS\]/);
+      // Never expose model control tags in the conversation history or UI.
+      response = response
+        .replace('[SHOW_PRODUCT_INFO]', '')
+        .replace(/\[PRODUCT_IDS\].*?\[\/PRODUCT_IDS\]/, '')
+        .trim();
+      await conversationService.addMessageToConversation(conversation._id, 'assistant', response);
+
+      // Product cards are a UI rule for product questions, not an unreliable model choice.
+      if (shouldShowProducts) {
 
         let productsToShow;
         if (productIdsMatch) {
@@ -121,8 +159,6 @@ const processChat = async (req, res) => {
               })
             : products;
 
-          // Remove ID tags from response
-          response = response.replace(/\[PRODUCT_IDS\].*?\[\/PRODUCT_IDS\]/, '');
         } else {
           // Show all products if no IDs specified
           productsToShow = products;
@@ -135,7 +171,7 @@ const processChat = async (req, res) => {
     } else {
       // If no product information or different question, send to Gemini API
       const productInfo = JSON.stringify({ message: 'No relevant product information found.' });
-      response = await aiService.generateGeminiResponse(message, productInfo, category, conversationHistory);
+      response = await aiService.generateResponse(message, productInfo, category, conversationHistory);
       const cleanedResponse = response.replace('[SHOW_PRODUCT_INFO]', '');
       await conversationService.addMessageToConversation(conversation._id, 'assistant', cleanedResponse);
     }

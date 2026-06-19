@@ -28,11 +28,6 @@ const getProductInfo = async (query) => {
   try {
     const embedding = await getEmbedding(query);
 
-    // Use fixed alpha value for vector search
-    const alpha = 0.5;
-
-    console.log(`Vector search alpha: ${alpha}`);
-
     // Clean query text for GraphQL - make it safe
     // Remove special characters and quotes
     const cleanQuery = query
@@ -47,15 +42,13 @@ const getProductInfo = async (query) => {
       query: `{
         Get {
           Ecommerce (
-            hybrid: {
-              query: "${cleanQuery}"
-              alpha: ${alpha},
-              vector: ${JSON.stringify(embedding)},
+            nearVector: {
+              vector: ${JSON.stringify(embedding)}
             }
             limit: 3
           ) {
             data
-            _additional { score }
+            _additional { distance }
           }
         }
       }`,
@@ -73,8 +66,9 @@ const getProductInfo = async (query) => {
 
     const response = await axios.request(config);
 
-    console.log('response.data.data.Get.Ecommerce', response.data.data.Get.Ecommerce);
-    return response.data.data.Get.Ecommerce.map((item) => item.data);
+    const products = response.data.data.Get.Ecommerce.map((item) => item.data);
+    console.log(`Vector search returned ${products.length} products.`);
+    return products;
   } catch (error) {
     console.error('Error during Weaviate query:', error);
     return [];
