@@ -1,28 +1,30 @@
+const crypto = require('crypto');
 const Conversation = require('../models/Conversation');
 
 /**
- * Creates an empty conversation
+ * Creates an empty conversation with a random 128-bit token (32 hex characters)
  * @returns {Promise<Object>} - Created conversation
  */
-const createConversation = () => Conversation.create({ title: 'New Conversation', messages: [] });
+const createConversation = () =>
+  Conversation.create({ token: crypto.randomBytes(16).toString('hex'), title: 'New Conversation', messages: [] });
 
 /**
- * Returns the conversation, or a new one when the ID is unknown (for example after a database reset)
- * @param {String} conversationId - Validated ObjectId string
+ * Returns the conversation, or a new one when the token is unknown (for example after a database reset)
+ * @param {String} token - Validated conversation token
  * @returns {Promise<Object>} - Conversation
  */
-const getConversationById = async (conversationId) =>
-  (await Conversation.findById(conversationId)) || createConversation();
+const getConversationByToken = async (token) =>
+  (await Conversation.findOne({ token })) || createConversation();
 
 /**
  * Appends messages in a single atomic update
- * @param {String} conversationId - Conversation ID
+ * @param {String} token - Conversation token
  * @param {Array<{role: String, content: String}>} messages - Messages to append
  */
-const addMessages = async (conversationId, messages) => {
+const addMessages = async (token, messages) => {
   const timestamp = new Date();
   await Conversation.updateOne(
-    { _id: conversationId },
+    { token },
     {
       $push: { messages: { $each: messages.map((msg) => ({ ...msg, timestamp })) } },
       $set: { updatedAt: timestamp },
@@ -32,18 +34,18 @@ const addMessages = async (conversationId, messages) => {
 
 /**
  * Returns the most recent messages, oldest first
- * @param {String} conversationId - Conversation ID
+ * @param {String} token - Conversation token
  * @param {Number} limit - Maximum number of messages
  * @returns {Promise<Array<Object>>} - Messages
  */
-const getConversationMessages = async (conversationId, limit = 10) => {
-  const conversation = await Conversation.findById(conversationId, { messages: { $slice: -limit } }).lean();
+const getConversationMessages = async (token, limit = 10) => {
+  const conversation = await Conversation.findOne({ token }, { messages: { $slice: -limit } }).lean();
   return conversation ? conversation.messages : [];
 };
 
 module.exports = {
   createConversation,
-  getConversationById,
+  getConversationByToken,
   addMessages,
   getConversationMessages,
 };

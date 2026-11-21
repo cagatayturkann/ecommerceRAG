@@ -19,6 +19,11 @@ const messageSchema = new mongoose.Schema({
 
 const conversationSchema = new mongoose.Schema(
   {
+    // Random 128-bit bearer token the client sends back to continue the conversation; _id is never exposed.
+    token: {
+      type: String,
+      required: true,
+    },
     title: {
       type: String,
       required: true,
@@ -35,5 +40,8 @@ const conversationSchema = new mongoose.Schema(
   },
   { versionKey: false }
 );
+
+// Partial so that conversations created before tokens existed (no token, unreachable now) do not block the index.
+conversationSchema.index({ token: 1 }, { unique: true, partialFilterExpression: { token: { $type: 'string' } } });
 
 module.exports = mongoose.model('Conversation', conversationSchema);

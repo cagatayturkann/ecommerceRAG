@@ -5,7 +5,7 @@ const productService = require('../services/productService');
 
 const MAX_MESSAGE_LENGTH = 500;
 const HISTORY_TURNS = 4;
-const OBJECT_ID_PATTERN = /^[a-f0-9]{24}$/i;
+const CONVERSATION_TOKEN_PATTERN = /^[a-f0-9]{32}$/;
 
 // Only the fields the model needs to answer; keeps the prompt small and free of reviewer e-mails etc.
 const toPromptProduct = (product) => ({
@@ -30,8 +30,8 @@ const parseChatRequest = (body) => {
   }
 
   const { conversationId } = body;
-  if (conversationId != null && (typeof conversationId !== 'string' || !OBJECT_ID_PATTERN.test(conversationId))) {
-    return { error: 'conversationId must be a 24-character hex string' };
+  if (conversationId != null && (typeof conversationId !== 'string' || !CONVERSATION_TOKEN_PATTERN.test(conversationId))) {
+    return { error: 'conversationId must be a 32-character lowercase hex string' };
   }
 
   return { message, conversationId };
@@ -53,10 +53,10 @@ const processChat = async (req, res, next) => {
   try {
     const { message, conversationId } = parsed;
     const conversation = conversationId
-      ? await conversationService.getConversationById(conversationId)
+      ? await conversationService.getConversationByToken(conversationId)
       : await conversationService.createConversation();
 
-    const history = await conversationService.getConversationMessages(conversation._id, HISTORY_TURNS);
+    const history = await conversationService.getConversationMessages(conversation.token, HISTORY_TURNS);
     const searchQuery = await aiService.rewriteSearchQuery(message, history);
     const products = searchQuery ? await vectorService.searchProducts(searchQuery) : [];
 
@@ -69,7 +69,7 @@ const processChat = async (req, res, next) => {
     // Drop any ID the model returned that was not in the retrieved set.
     const citedProducts = products.filter((product) => productIds.includes(String(product.id)));
 
-    await conversationService.addMessages(conversation._id, [
+    await conversationService.addMessages(conversation.token, [
       { role: 'user', content: message },
       { role: 'assistant', content: answer },
     ]);
@@ -78,7 +78,7 @@ const processChat = async (req, res, next) => {
       response: productService.renderAnswer(answer, citedProducts),
       answer,
       productIds: citedProducts.map((product) => String(product.id)),
-      conversationId: conversation._id.toString(),
+      conversationId: conversation.token,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

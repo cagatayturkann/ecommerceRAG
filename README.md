@@ -57,5 +57,5 @@ The response contains `answer` (plain text), `productIds` (the products the answ
 
 - No automated tests yet.
 - The rate limiter is in-process; several instances would need a shared store.
-- Conversations have no owner: anyone holding a conversation ID can continue it. There is no endpoint that lists or reads conversations.
+- The conversation ID returned to the client is a random 128-bit bearer token, not the database ID. Conversations still have no owner account, so whoever holds the token can continue that conversation. There is no endpoint that lists or reads conversations.
 - Retrieval is pure vector search with a fixed top 3; there is no keyword or hybrid ranking and no relevance threshold.
