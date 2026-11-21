@@ -2,6 +2,8 @@
 
 A shopping assistant for an online store. Shoppers ask questions in any language through an embeddable chat widget; the server finds the relevant products with vector search and has Claude answer from those products only. Each answer lists the IDs of the products it was based on, and the widget shows cards for exactly those products.
 
+Live demo: https://rag.cagatayturkan.com (open the chat button; each visitor IP gets 20 messages per minute).
+
 It is a public, simplified version of retrieval work I did on a Shopify sales chatbot. The catalogue is 194 sample products from [DummyJSON](https://dummyjson.com/docs/products).
 
 ## Architecture
