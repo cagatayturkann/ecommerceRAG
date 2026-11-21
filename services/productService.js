@@ -1,47 +1,40 @@
-/**
- * Formats product information into HTML for display
- * @param {Array} products - Array of product objects
- * @returns {String} - HTML formatted product information
- */
-const formatProductInfo = (products) => {
-  if (!products || products.length === 0) {
-    return 'No relevant product information found.';
-  }
+const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 
-  if (products.error) {
-    return products.message;
-  }
+// Everything that reaches the widget's innerHTML goes through this, including model output.
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => HTML_ESCAPES[char]);
 
-  let productsHTML = '<div class="products-container">';
-
-  products.forEach((product) => {
-    const parsedProduct = typeof product === 'string' ? JSON.parse(product) : product;
-
-    productsHTML += `
+const renderProductCard = (product) => `
       <div class="product-card">
         <div class="product-image">
-          <img src="${parsedProduct.thumbnail || parsedProduct.images?.[0]}" 
-               alt="${parsedProduct.title || 'Product Image'}" 
+          <img src="${escapeHtml(product.thumbnail || product.images?.[0])}"
+               alt="${escapeHtml(product.title || 'Product image')}"
                loading="lazy">
         </div>
         <div class="product-info">
-          <h3 class="product-title">${parsedProduct.title || 'Name not specified'}</h3>
-          <p class="product-description">${parsedProduct.description || 'Description not specified'}</p>
+          <h3 class="product-title">${escapeHtml(product.title || 'Name not specified')}</h3>
+          <p class="product-description">${escapeHtml(product.description || 'Description not specified')}</p>
           <div class="product-price-container">
-            <span class="product-price">$${parsedProduct.price || 'Price not specified'}</span>
+            <span class="product-price">$${escapeHtml(product.price ?? 'Price not specified')}</span>
           </div>
-          <a href="/product/${parsedProduct.id}" class="product-detail-button" target="_blank">
+          <a href="/product/${encodeURIComponent(product.id)}" class="product-detail-button" target="_blank" rel="noopener">
             More Details
           </a>
         </div>
-      </div>
-    `;
-  });
+      </div>`;
 
-  productsHTML += '</div>';
-  return productsHTML;
+/**
+ * Builds the HTML the widget shows: the escaped answer text followed by cards for the cited products.
+ * @param {String} answer - Model answer (plain text)
+ * @param {Array<Object>} products - Products the answer cited
+ * @returns {String} - HTML
+ */
+const renderAnswer = (answer, products) => {
+  const text = `<p>${escapeHtml(answer).replace(/\n/g, '<br>')}</p>`;
+  if (!products.length) return text;
+  return `${text}<div class="products-container">${products.map(renderProductCard).join('')}</div>`;
 };
 
 module.exports = {
-  formatProductInfo
-}; 
+  escapeHtml,
+  renderAnswer,
+};

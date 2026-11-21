@@ -108,12 +108,6 @@
     // Initialize conversationId as null (no longer using localStorage)
     let conversationId = null;
 
-    // ObjectId formatını kontrol eden yardımcı fonksiyon
-    function isValidObjectId(id) {
-      // MongoDB ObjectId formatı: 24 karakterlik hexadecimal
-      return id && typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id);
-    }
-
     // Textarea otomatik boyutlandırma
     messageInput.addEventListener('input', function () {
       this.style.height = 'auto';
@@ -122,62 +116,6 @@
 
     // Hoşgeldin mesajı ekle (since we're not loading from localStorage)
     addMessage('Merhaba! Size nasıl yardımcı olabilirim?', 'bot');
-
-    // Konuşma geçmişini yükleme fonksiyonu
-    async function loadConversationHistory(id) {
-      try {
-        // ID formatını kontrol et
-        if (!isValidObjectId(id)) {
-          console.error('Geçersiz conversation ID formatı:', id);
-          // Hoşgeldin mesajı ekle
-          addMessage('Merhaba! Size nasıl yardımcı olabilirim?', 'bot');
-          return;
-        }
-
-        // Yükleniyor mesajı ekle
-        const loadingMessage = addLoadingMessage();
-
-        // Konuşma geçmişini API'den al
-        const response = await fetch(`/api/conversations/${id}/messages`);
-        
-        if (response.ok) {
-          const data = await response.json();
-          
-          // Yükleniyor mesajını kaldır
-          loadingMessage.remove();
-          
-          // Mesajları ekle
-          if (data && data.messages && data.messages.length > 0) {
-            chatMessages.innerHTML = ''; // Mevcut mesajları temizle
-            
-            data.messages.forEach((msg) => {
-              const sender = msg.role === 'user' ? 'user' : 'bot';
-              addMessage(msg.content, sender);
-            });
-            
-            // Otomatik scroll
-            chatMessages.scrollTo({
-              top: chatMessages.scrollHeight,
-              behavior: 'smooth',
-            });
-          } else {
-            // Mesaj yoksa hoşgeldin mesajı ekle
-            addMessage('Merhaba! Size nasıl yardımcı olabilirim?', 'bot');
-          }
-        } else {
-          // Hata durumunda yeni bir conversation başlat
-          loadingMessage.remove();
-          conversationId = null;
-          addMessage('Merhaba! Size nasıl yardımcı olabilirim?', 'bot');
-        }
-      } catch (error) {
-        console.error('Error loading conversation history:', error);
-        // Hata durumunda yeni bir conversation başlat
-        conversationId = null;
-        chatMessages.innerHTML = '';
-        addMessage('Merhaba! Size nasıl yardımcı olabilirim?', 'bot');
-      }
-    }
 
     // Chat toggle işlemi
     chatToggle.addEventListener('click', () => {

@@ -1,31 +1,24 @@
 const fs = require('fs');
 const path = require('path');
+const { escapeHtml: e } = require('../services/productService');
+
+// The catalogue is static, so it is read once at startup.
+const products = JSON.parse(fs.readFileSync(path.join(__dirname, '../public/files/products.json'), 'utf8'));
 
 /**
  * Renders the product detail page
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  */
-const getProductDetail = async (req, res) => {
+const getProductDetail = (req, res) => {
   try {
-    const productId = parseInt(req.params.id);
-    
-    if (!productId) {
-      return res.status(400).send('Invalid product ID');
-    }
-    
-    // Read products.json file
-    const productsPath = path.join(__dirname, '../public/files/products.json');
-    const productsData = fs.readFileSync(productsPath, 'utf8');
-    const products = JSON.parse(productsData);
-    
-    // Find product by ID
-    const product = products.find(p => p.id === productId);
-    
+    const productId = Number(req.params.id);
+    const product = Number.isInteger(productId) ? products.find((p) => p.id === productId) : null;
+
     if (!product) {
       return res.status(404).send('Product not found');
     }
-    
+
     // Create HTML page
     const html = `
     <!DOCTYPE html>
@@ -33,7 +26,7 @@ const getProductDetail = async (req, res) => {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${product.title} - Product Detail</title>
+      <title>${e(product.title)} - Product Detail</title>
       <style>
         :root {
           --primary-color: #0F1923;
@@ -228,19 +221,19 @@ const getProductDetail = async (req, res) => {
       <div class="container">
         <div class="product-detail">
           <div class="product-images">
-            <img src="${product.images && product.images.length > 0 ? product.images[0] : product.thumbnail}" alt="${product.title}" class="main-image" id="mainImage">
+            <img src="${e(product.images && product.images.length > 0 ? product.images[0] : product.thumbnail)}" alt="${e(product.title)}" class="main-image" id="mainImage">
             
             ${product.images && product.images.length > 0 ? `
             <div class="image-thumbnails">
               ${product.images.map((image, index) => `
-                <img src="${image}" alt="${product.title} - Image ${index + 1}" class="thumbnail ${index === 0 ? 'active' : ''}" onclick="changeImage('${image}', this)">
+                <img src="${e(image)}" alt="${e(product.title)} - Image ${index + 1}" class="thumbnail ${index === 0 ? 'active' : ''}">
               `).join('')}
             </div>
             ` : ''}
           </div>
           
           <div class="product-info">
-            <h1>${product.title}</h1>
+            <h1>${e(product.title)}</h1>
             
             <div class="product-rating">
               <div class="stars">
@@ -260,18 +253,18 @@ const getProductDetail = async (req, res) => {
             </div>
             
             <div class="description">
-              <p>${product.description}</p>
+              <p>${e(product.description)}</p>
             </div>
             
             <div class="details">
               <div class="detail-item">
                 <span class="detail-label">Category</span>
-                <span class="detail-value">${product.category || 'Not specified'}</span>
+                <span class="detail-value">${e(product.category || 'Not specified')}</span>
               </div>
               
               <div class="detail-item">
                 <span class="detail-label">Brand</span>
-                <span class="detail-value">${product.brand || 'Not specified'}</span>
+                <span class="detail-value">${e(product.brand || 'Not specified')}</span>
               </div>
               
               <div class="detail-item">
@@ -281,27 +274,27 @@ const getProductDetail = async (req, res) => {
               
               <div class="detail-item">
                 <span class="detail-label">SKU</span>
-                <span class="detail-value">${product.sku || 'Not specified'}</span>
+                <span class="detail-value">${e(product.sku || 'Not specified')}</span>
               </div>
               
               <div class="detail-item">
                 <span class="detail-label">Warranty</span>
-                <span class="detail-value">${product.warrantyInformation || 'Not specified'}</span>
+                <span class="detail-value">${e(product.warrantyInformation || 'Not specified')}</span>
               </div>
               
               <div class="detail-item">
                 <span class="detail-label">Shipping</span>
-                <span class="detail-value">${product.shippingInformation || 'Not specified'}</span>
+                <span class="detail-value">${e(product.shippingInformation || 'Not specified')}</span>
               </div>
               
               <div class="detail-item">
                 <span class="detail-label">Returns</span>
-                <span class="detail-value">${product.returnPolicy || 'Not specified'}</span>
+                <span class="detail-value">${e(product.returnPolicy || 'Not specified')}</span>
               </div>
               
               <div class="detail-item">
                 <span class="detail-label">Status</span>
-                <span class="detail-value">${product.availabilityStatus || 'Not specified'}</span>
+                <span class="detail-value">${e(product.availabilityStatus || 'Not specified')}</span>
               </div>
             </div>
           </div>
@@ -320,11 +313,10 @@ const getProductDetail = async (req, res) => {
                 <span class="review-date">${new Date(review.date).toLocaleDateString('en-US')}</span>
               </div>
               <div class="review-comment">
-                <p>${review.comment}</p>
+                <p>${e(review.comment)}</p>
               </div>
               <div class="reviewer-info">
-                <p>By: ${review.reviewerName}</p>
-                <p>Email: ${review.reviewerEmail}</p>
+                <p>By: ${e(review.reviewerName)}</p>
               </div>
             </div>
           `).join('')}
@@ -333,17 +325,13 @@ const getProductDetail = async (req, res) => {
       </div>
       
       <script>
-        function changeImage(src, thumbnail) {
-          document.getElementById('mainImage').src = src;
-          
-          // Deactivate all thumbnails
-          document.querySelectorAll('.thumbnail').forEach(thumb => {
-            thumb.classList.remove('active');
+        document.querySelectorAll('.thumbnail').forEach((thumbnail) => {
+          thumbnail.addEventListener('click', () => {
+            document.getElementById('mainImage').src = thumbnail.src;
+            document.querySelectorAll('.thumbnail').forEach((thumb) => thumb.classList.remove('active'));
+            thumbnail.classList.add('active');
           });
-          
-          // Activate selected thumbnail
-          thumbnail.classList.add('active');
-        }
+        });
       </script>
 
       <script src="/js/widget.js"></script>
@@ -355,7 +343,7 @@ const getProductDetail = async (req, res) => {
     res.send(html);
   } catch (error) {
     console.error('Product detail page error:', error);
-    res.status(500).send('An error occurred: ' + error.message);
+    res.status(500).send('Something went wrong.');
   }
 };
 
