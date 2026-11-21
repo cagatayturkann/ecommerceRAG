@@ -3,6 +3,7 @@ require('dotenv').config({ quiet: true });
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const mongoose = require('mongoose');
 const connectDB = require('./config/db');
 const routes = require('./routes');
 
@@ -46,6 +47,12 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
+// Container health check: up and connected to MongoDB.
+app.get('/health', (req, res) => {
+  const ok = mongoose.connection.readyState === 1;
+  res.status(ok ? 200 : 503).json({ status: ok ? 'ok' : 'unavailable' });
+});
+
 app.use(express.json({ limit: '10kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -66,7 +73,14 @@ app.use((err, req, res, next) => {
 
 connectDB()
   .then(() => {
-    app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+    const server = app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+
+    // On deploy the old container gets SIGTERM: finish in-flight chats, then close the database connection.
+    process.once('SIGTERM', () => {
+      console.log('SIGTERM received, shutting down');
+      server.close(() => mongoose.disconnect().finally(() => process.exit(0)));
+      setTimeout(() => process.exit(1), 25000).unref();
+    });
   })
   .catch((error) => {
     console.error(`Could not connect to MongoDB: ${error.message}`);

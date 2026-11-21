@@ -45,6 +45,15 @@ curl -s localhost:3000/api/chat -H 'content-type: application/json' \
 
 The response contains `answer` (plain text), `productIds` (the products the answer used), `conversationId` (send it back to continue the conversation) and `response` (the HTML the widget shows).
 
+## Deployment
+
+The repository has the pieces for a self-hosted Coolify server; nothing here depends on a particular host.
+
+- `Dockerfile`: the app image (Node 24, production dependencies only, runs as `node`, health check on `GET /health`). `.github/workflows/deploy.yml` builds it on pushes to `main`, pushes it to GHCR and triggers the deploy over SSH.
+- `docker-compose.coolify.yml`: Weaviate and Model2Vec as a separate resource on the server's internal network. Nothing is published, and Weaviate requires an API key because other containers share that network.
+- Environment: `NODE_ENV=production`, `ALLOWED_ORIGINS` (the public origin), `TRUST_PROXY=1` behind one reverse proxy, `MONGODB_URI`, `WEAVIATE_URL=http://ecommerce-rag-weaviate:8080`, `WEAVIATE_API_KEY`, `ANTHROPIC_API_KEY`.
+- After the first deploy, load the catalogue once from the app container: `node scripts/seedProducts.js`.
+
 ## Design notes
 
 - **Retrieval.** Products are embedded once at seed time from their title, description, brand, category and tags with `minishlab/potion-retrieval-32M` (Model2Vec, runs on CPU in the Weaviate stack, no embedding API key). At query time Weaviate embeds the search query with the same model and returns the three nearest products.

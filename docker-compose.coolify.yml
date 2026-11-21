@@ -1,0 +1,52 @@
+# Vector store on the Coolify server: a "Docker Compose" resource, separate from the app (a "Docker Image" app,
+# see the Dockerfile), because Weaviate rarely changes and a Compose resource restarts every container on deploy.
+#
+# Enable "Connect to Predefined Network" on this resource: the app reaches Weaviate on the shared `coolify`
+# network as http://ecommerce-rag-weaviate:8080 (gRPC 50051). Nothing is published or routed by Traefik.
+# The service names carry the project prefix because other apps' containers share that network.
+#
+# Other containers on that network can reach Weaviate too, so it requires an API key
+# (WEAVIATE_API_KEY, set in Coolify; the app gets the same value).
+services:
+  ecommerce-rag-weaviate:
+    image: cr.weaviate.io/semitechnologies/weaviate:1.40.7
+    restart: unless-stopped
+    environment:
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "false"
+      AUTHENTICATION_APIKEY_ENABLED: "true"
+      AUTHENTICATION_APIKEY_ALLOWED_KEYS: ${WEAVIATE_API_KEY:?}
+      AUTHENTICATION_APIKEY_USERS: ecommerce-rag
+      PERSISTENCE_DATA_PATH: /var/lib/weaviate
+      DEFAULT_VECTORIZER_MODULE: none
+      ENABLE_MODULES: text2vec-model2vec
+      MODEL2VEC_INFERENCE_API: http://ecommerce-rag-model2vec:8080
+      CLUSTER_HOSTNAME: node1
+      DISABLE_TELEMETRY: "true"
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+    expose:
+      - "8080"
+      - "50051"
+    depends_on:
+      - ecommerce-rag-model2vec
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/v1/.well-known/ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: "3" }
+
+  ecommerce-rag-model2vec:
+    image: cr.weaviate.io/semitechnologies/model2vec-inference:minishlab-potion-retrieval-32M-1.2.1
+    restart: unless-stopped
+    expose:
+      - "8080"
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: "3" }
+
+volumes:
+  weaviate_data:

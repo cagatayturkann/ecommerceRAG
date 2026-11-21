@@ -1,0 +1,97 @@
+# Builds the production image on GitHub's runners, pushes it to GHCR and asks Coolify to deploy it.
+# The shared server never builds anything; it only pulls.
+#
+# Deploy: SSH with a key that may run exactly one command on the server (`command=` in authorized_keys), which calls
+# Coolify's API on localhost. No Coolify token leaves the server.
+# Rollback: run this workflow by hand with `rollback_sha` = an earlier full commit SHA (re-tag + deploy, no build).
+name: Build and deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      rollback_sha:
+        description: "Full commit SHA whose image to deploy again (empty = build the current commit)"
+        required: false
+        default: ""
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions: {}
+
+env:
+  IMAGE: ghcr.io/cagatayturkann/ecommerce-rag
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main' && inputs.rollback_sha == ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          provenance: false
+          tags: |
+            ${{ env.IMAGE }}:sha-${{ github.sha }}
+            ${{ env.IMAGE }}:main
+          cache-from: type=gha,scope=app
+          cache-to: type=gha,mode=max,scope=app
+
+  rollback:
+    if: github.ref == 'refs/heads/main' && inputs.rollback_sha != ''
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    timeout-minutes: 10
+    steps:
+      - name: Check the SHA
+        env:
+          SHA: ${{ inputs.rollback_sha }}
+        run: '[[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "rollback_sha must be a full 40-character commit SHA"; exit 1; }'
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Point `main` at the earlier image
+        env:
+          SHA: ${{ inputs.rollback_sha }}
+        run: docker buildx imagetools create --tag "$IMAGE:main" "$IMAGE:sha-$SHA"
+
+  deploy:
+    needs: [build, rollback]
+    if: always() && github.ref == 'refs/heads/main' && (needs.build.result == 'success' || needs.rollback.result == 'success')
+    runs-on: ubuntu-latest
+    permissions: {}
+    timeout-minutes: 5
+    steps:
+      - name: Ask the server to deploy
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          [ -n "$DEPLOY_SSH_KEY" ] && [ -n "$DEPLOY_KNOWN_HOSTS" ] && [ -n "$DEPLOY_HOST" ] \
+            || { echo "DEPLOY_SSH_KEY, DEPLOY_KNOWN_HOSTS and DEPLOY_HOST secrets are required"; exit 1; }
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          # The key's forced command ignores what we send and only triggers the deploy.
+          ssh -i ~/.ssh/deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=20 "root@$DEPLOY_HOST" deploy
