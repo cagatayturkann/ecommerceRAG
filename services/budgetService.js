@@ -1,7 +1,8 @@
 const BudgetMonth = require('../models/BudgetMonth');
 
 // Monthly cap on Claude API spend for this demo. Once reached, /api/chat stops calling the API until the next
-// month (UTC). In-flight requests can overshoot it by a few cents at most.
+// month (UTC). The check and the recording are separate steps, so each request already in flight can
+// overshoot it by its own cost (about 0.02 USD typical, under 0.2 USD worst case).
 const DEFAULT_BUDGET_USD = 15;
 
 // USD per 1M tokens (Anthropic first-party prices, checked 2026-11-22). Cache writes cost 1.25x input.
