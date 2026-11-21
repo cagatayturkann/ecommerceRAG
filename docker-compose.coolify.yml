@@ -2,8 +2,8 @@
 # see the Dockerfile), because Weaviate rarely changes and a Compose resource restarts every container on deploy.
 #
 # Enable "Connect to Predefined Network" on this resource: the app reaches Weaviate on the shared `coolify`
-# network as http://ecommerce-rag-weaviate:8080 (gRPC 50051). Nothing is published or routed by Traefik.
-# The service names carry the project prefix because other apps' containers share that network.
+# network by its container name, which Coolify suffixes with the resource UUID
+# (http://ecommerce-rag-weaviate-<uuid>:8080, gRPC 50051). Nothing is published or routed by Traefik.
 #
 # Other containers on that network can reach Weaviate too, so it requires an API key
 # (WEAVIATE_API_KEY, set in Coolify; the app gets the same value).
