@@ -199,7 +199,10 @@
             conversationId = data.conversationId;
           }
         } else {
-          addMessage('Üzgünüm, bir hata oluştu. Lütfen tekrar deneyin.', 'bot');
+          // Rate limit (429) and monthly budget (503) answers carry a message meant for the user.
+          const data = await response.json().catch(() => null);
+          const known = response.status === 429 || response.status === 503;
+          addMessage(known && data && data.error ? data.error : 'Üzgünüm, bir hata oluştu. Lütfen tekrar deneyin.', 'bot');
         }
       } catch (error) {
         console.error('Error:', error);

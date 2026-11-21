@@ -2,6 +2,7 @@ const conversationService = require('../services/conversationService');
 const vectorService = require('../services/vectorService');
 const aiService = require('../services/aiService');
 const productService = require('../services/productService');
+const budgetService = require('../services/budgetService');
 
 const MAX_MESSAGE_LENGTH = 500;
 const HISTORY_TURNS = 4;
@@ -39,6 +40,7 @@ const parseChatRequest = (body) => {
 
 /**
  * POST /api/chat
+ * 0. Refuse when this month's Claude API budget is used up (services/budgetService.js).
  * 1. Rewrite the message into an English search query (handles other languages and follow-ups).
  * 2. Retrieve the nearest products from Weaviate.
  * 3. Answer from those products only; the model returns the product IDs it used.
@@ -51,6 +53,12 @@ const processChat = async (req, res, next) => {
   }
 
   try {
+    if (await budgetService.isExhausted()) {
+      return res.status(503).json({
+        error: 'This demo has used its AI budget for the month. Please try again next month.',
+      });
+    }
+
     const { message, conversationId } = parsed;
     const conversation = conversationId
       ? await conversationService.getConversationByToken(conversationId)

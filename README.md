@@ -63,10 +63,11 @@ The repository has the pieces for a self-hosted Coolify server; nothing here dep
 - **Grounding.** The answer prompt contains only the retrieved products (selected fields, no reviewer data) and tells the model to use only those facts. The model returns JSON with `answer` and `product_ids` (structured output). The server drops any ID that was not retrieved, so a product card can only come from the search results.
 - **Safety of the rendered output.** The model's text and all product fields are HTML-escaped on the server before the widget inserts them.
 - **Abuse limits.** `/api/chat` validates input (message up to 500 characters, conversation ID format), limits the JSON body to 10 KB and rate-limits each IP (20 requests per minute by default, in memory). In production, CORS and an Origin/Referer check accept only `ALLOWED_ORIGINS`; that check stops casual cross-site use, not a determined non-browser client.
+- **Spend cap.** Each Claude response's token usage is priced and added to a per-month counter in MongoDB (`services/budgetService.js`). Once the month reaches `MONTHLY_BUDGET_USD` (15 by default), `/api/chat` answers 503 without calling Claude until the next month (UTC). Requests already in flight can overshoot the cap by a few cents; responses from a model the price table does not know are charged at the highest listed price.
 
 ## Limitations
 
-- No automated tests yet.
+- Automated tests cover only the cost calculation (`npm test`); the chat pipeline is tested by hand.
 - The rate limiter is in-process; several instances would need a shared store.
 - The conversation ID returned to the client is a random 128-bit bearer token, not the database ID. Conversations still have no owner account, so whoever holds the token can continue that conversation. There is no endpoint that lists or reads conversations.
 - Retrieval is pure vector search with a fixed top 3; there is no keyword or hybrid ranking and no relevance threshold.

@@ -1,4 +1,5 @@
 const Anthropic = require('@anthropic-ai/sdk');
+const budgetService = require('./budgetService');
 
 // Answers come from the main model; the cheap query-rewrite step runs on a smaller model.
 const ANSWER_MODEL = process.env.ANTHROPIC_MODEL || 'claude-opus-5-5';
@@ -41,6 +42,13 @@ const toMessages = (history) => {
   return turns;
 };
 
+// Every response counts toward the monthly budget. If recording fails, log it and keep the answer: the next
+// request's budget check reads the same database and fails closed if it is down.
+const recordUsage = (model, response) =>
+  budgetService
+    .recordUsage(model, response)
+    .catch((error) => console.error('Could not record API usage:', error.message));
+
 const firstText = (response) => response.content.find((block) => block.type === 'text')?.text;
 
 /**
@@ -69,6 +77,7 @@ const rewriteSearchQuery = async (message, history) => {
       },
     ],
   });
+  await recordUsage(REWRITE_MODEL, response);
 
   if (response.stop_reason !== 'end_turn') return message;
   return JSON.parse(firstText(response)).search_query.trim();
@@ -101,6 +110,7 @@ ${JSON.stringify(products)}`;
     system,
     messages: [...toMessages(history), { role: 'user', content: message }],
   });
+  await recordUsage(ANSWER_MODEL, response);
 
   if (response.stop_reason !== 'end_turn') {
     throw new Error(`Answer generation stopped early: ${response.stop_reason}`);
