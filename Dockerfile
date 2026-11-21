@@ -11,10 +11,11 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
-COPY --chown=node:node . .
+# Owned by root: the app never writes to its own directory.
+COPY . .
 
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --start-interval=1s --retries=3 \
-  CMD curl -fsS http://127.0.0.1:3000/health || exit 1
+  CMD curl -fsS "http://127.0.0.1:${PORT}/health" || exit 1
 CMD ["node", "server.js"]
